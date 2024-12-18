@@ -112,7 +112,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
    * @instance
    * @async
    */
-  const open = async (address, { type, meta, sync, Database, AccessController, headsStorage, entryStorage, indexStorage, referencesCount,ver ='js-v2' } = {}) => {
+  const open = async (address, { type, meta, sync, Database, AccessController, headsStorage, entryStorage, indexStorage, referencesCount, ver ='js-v2', marshaler } = {}) => {
     let name, manifest, accessController
 
     if (databases[address]) {
@@ -126,7 +126,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
       ver = manifest.ver
       const acType = manifest.accessController.split('/', 2).pop()
       AccessController = getAccessController(acType)()
-      accessController = await AccessController({ orbitdb: { open, identity, ipfs }, identities, address: manifest.accessController, ver})
+      accessController = await AccessController({ orbitdb: { open, identity, ipfs }, identities, address: manifest.accessController, ver })
       name = manifest.name
       type = type || manifest.type
       meta = manifest.meta
@@ -154,7 +154,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
 
     address = address.toString()
 
-    const db = await Database({ ipfs, identity, address, name, access: accessController, directory, meta, syncAutomatically: sync, headsStorage, entryStorage, indexStorage, referencesCount, ver })
+    const db = await Database({ ipfs, identity, address, name, access: accessController, directory, meta, syncAutomatically: sync, headsStorage, entryStorage, indexStorage, referencesCount, ver, marshaler })
     db.ver = ver
 
     db.events.on('close', onDatabaseClosed(address))

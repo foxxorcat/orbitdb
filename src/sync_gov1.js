@@ -79,7 +79,7 @@ const PROTOCOL = "/go-orbit-db/direct-channel/1.2.0"
  * @memberof module:Sync
  * @instance
  */
-const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout }) => {
+const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler }) => {
   /**
    * @namespace module:Sync~Sync
    * @description The instance returned by {@link module:Sync}.
@@ -169,9 +169,8 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout }) => {
       address,
       heads,
     }
-    console.log('builderMsg', msg);
-    // TODO: 替换为自定义编解码
-    return uint8arraysFromString(JSON.stringify(msg, goJSONReplacer))
+    console.debug('builderMsg', msg);
+    return await marshaler.marshal(msg)
   }
 
   /**
@@ -180,7 +179,7 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout }) => {
    * @returns {Promise<Uint8Array[]>} entrysBytes
    */
   const parseMsg = async (value) => {
-    let { address, heads = [] } = JSON.parse(uint8arraysToString(value), goJSONReviver)
+    let { address, heads = [] } = await marshaler.unmarshal(value)
     if (address != address) { return [] }
 
     const headsBytes = []
@@ -190,13 +189,13 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout }) => {
       const entryHash = CID.parse(entryGoV1.hash);
       entryGoV1.hash = null; delete entryGoV1.bytes;
       const { cid, bytes } = await Block.encode({ value: entryGoV1, codec: dagCbor, hasher: sha256 })
-      if (!entryHash.equals(cid)){
+      if (!entryHash.equals(cid)) {
         events.emit('error', new Error('sync entry hash error'))
         continue
       }
       headsBytes.push(bytes)
     }
-    console.log('parseMsg', heads, headsBytes);
+    console.debug('parseMsg', heads, headsBytes);
     return headsBytes
   }
 

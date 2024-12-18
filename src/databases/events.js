@@ -15,8 +15,8 @@ const type = 'events'
  * @return {module:Databases.Databases-Events} A Events function.
  * @memberof module:Databases
  */
-const Events = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver }) => {
-  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver })
+const Events = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler }) => {
+  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler })
 
   const { addOperation, log } = database
 

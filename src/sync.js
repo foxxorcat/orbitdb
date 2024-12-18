@@ -67,7 +67,7 @@ const DefaultTimeout = 30000 // 30 seconds
  * @memberof module:Sync
  * @instance
  */
-const Sync = async ({ ipfs, log, events, onSynced, start, timeout }) => {
+const Sync = async ({ ipfs, log, events, onSynced, start, timeout, marshaler }) => {
   /**
    * @namespace module:Sync~Sync
    * @description The instance returned by {@link module:Sync}.
@@ -144,17 +144,17 @@ const Sync = async ({ ipfs, log, events, onSynced, start, timeout }) => {
   }
 
   const sendHeads = (source) => {
-    return (async function * () {
+    return (async function* () {
       const heads = await log.heads()
       for await (const { bytes } of heads) {
-        yield bytes
+        yield marshaler.marshal(bytes)
       }
     })()
   }
 
   const receiveHeads = (peerId) => async (source) => {
     for await (const value of source) {
-      const headBytes = value.subarray()
+      const headBytes = marshaler.unmarshal(value.subarray())
       if (headBytes && onSynced) {
         await onSynced(headBytes)
       }

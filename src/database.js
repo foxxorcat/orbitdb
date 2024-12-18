@@ -11,6 +11,7 @@ import SyncGoV1 from './sync_gov1.js';
 import { Log, Entry } from './oplog/index.js'
 import { ComposedStorage, LRUStorage, IPFSBlockStorage, LevelStorage } from './storage/index.js'
 import pathJoin from './utils/path-join.js'
+import DefaultsMarshaler from './marshaler.js';
 
 const defaultReferencesCount = 16
 const defaultCacheSize = 1000
@@ -43,7 +44,7 @@ const defaultCacheSize = 1000
  * @return {module:Databases~Database} An instance of Database.
  * @instance
  */
-const Database = async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver = 'js-v2' }) => {
+const Database = async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver = 'js-v2', marshaler }) => {
   /**
    * @namespace module:Databases~Database
    * @description The instance returned by {@link module:Database~Database}.
@@ -93,6 +94,7 @@ const Database = async ({ ipfs, identity, address, name, access, directory, meta
   directory = pathJoin(directory || './orbitdb', `./${address}/`)
   meta = meta || {}
   referencesCount = Number(referencesCount) > -1 ? referencesCount : defaultReferencesCount
+  marshaler = marshaler || DefaultsMarshaler(ver)
 
   entryStorage = entryStorage || await ComposedStorage(
     await LRUStorage({ size: defaultCacheSize }),
@@ -186,7 +188,7 @@ const Database = async ({ ipfs, identity, address, name, access, directory, meta
     events.emit('drop')
   }
 
-  const sync = await (ver == 'go-v1' ? SyncGoV1 : Sync)({ ipfs, log, events, onSynced: applyOperation, start: syncAutomatically })
+  const sync = await (ver == 'go-v1' ? SyncGoV1 : Sync)({ ipfs, log, events, onSynced: applyOperation, start: syncAutomatically, marshaler })
 
   return {
     /**
