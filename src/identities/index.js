@@ -9,5 +9,6 @@ export {
 export {
   useIdentityProvider,
   getIdentityProvider,
-  PublicKeyIdentityProvider
+  PublicKeyIdentityProvider,
+  OrbitdbIdentityProvider
 } from './providers/index.js'

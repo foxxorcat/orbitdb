@@ -1,4 +1,5 @@
 import PublicKeyIdentityProvider from './publickey.js'
+import OrbitdbIdentityProvider from './orbitdb.js';
 
 const identityProviders = {}
 
@@ -37,5 +38,6 @@ const useIdentityProvider = (identityProvider) => {
 }
 
 useIdentityProvider(PublicKeyIdentityProvider)
+useIdentityProvider(OrbitdbIdentityProvider)
 
-export { useIdentityProvider, getIdentityProvider, PublicKeyIdentityProvider }
+export { useIdentityProvider, getIdentityProvider, PublicKeyIdentityProvider, OrbitdbIdentityProvider }

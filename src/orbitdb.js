@@ -112,7 +112,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
    * @instance
    * @async
    */
-  const open = async (address, { type, meta, sync, Database, AccessController, headsStorage, entryStorage, indexStorage, referencesCount } = {}) => {
+  const open = async (address, { type, meta, sync, Database, AccessController, headsStorage, entryStorage, indexStorage, referencesCount,ver ='js-v2' } = {}) => {
     let name, manifest, accessController
 
     if (databases[address]) {
@@ -123,9 +123,10 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
       // If the address given was a valid OrbitDB address, eg. '/orbitdb/zdpuAuK3BHpS7NvMBivynypqciYCuy2UW77XYBPUYRnLjnw13'
       const addr = OrbitDBAddress(address)
       manifest = await manifestStore.get(addr.hash)
+      ver = manifest.ver
       const acType = manifest.accessController.split('/', 2).pop()
       AccessController = getAccessController(acType)()
-      accessController = await AccessController({ orbitdb: { open, identity, ipfs }, identities, address: manifest.accessController })
+      accessController = await AccessController({ orbitdb: { open, identity, ipfs }, identities, address: manifest.accessController, ver})
       name = manifest.name
       type = type || manifest.type
       meta = manifest.meta
@@ -133,8 +134,8 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
       // If the address given was not valid, eg. just the name of the database
       type = type || DefaultDatabaseType
       AccessController = AccessController || DefaultAccessController()
-      accessController = await AccessController({ orbitdb: { open, identity, ipfs }, identities, name: address })
-      const m = await manifestStore.create({ name: address, type, accessController: accessController.address, meta })
+      accessController = await AccessController({ orbitdb: { open, identity, ipfs }, identities, name: address, ver })
+      const m = await manifestStore.create({ name: address, type, accessController: accessController.address, meta, ver })
       manifest = m.manifest
       address = OrbitDBAddress(m.hash)
       name = manifest.name
@@ -153,7 +154,8 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
 
     address = address.toString()
 
-    const db = await Database({ ipfs, identity, address, name, access: accessController, directory, meta, syncAutomatically: sync, headsStorage, entryStorage, indexStorage, referencesCount })
+    const db = await Database({ ipfs, identity, address, name, access: accessController, directory, meta, syncAutomatically: sync, headsStorage, entryStorage, indexStorage, referencesCount, ver })
+    db.ver = ver
 
     db.events.on('close', onDatabaseClosed(address))
 

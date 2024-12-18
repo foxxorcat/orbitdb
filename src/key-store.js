@@ -15,6 +15,7 @@ import { compare as uint8ArrayCompare } from 'uint8arrays/compare'
 import ComposedStorage from './storage/composed.js'
 import LevelStorage from './storage/level.js'
 import LRUStorage from './storage/lru.js'
+import secp256k1 from 'secp256k1';
 
 const verifySignature = async (signature, publicKey, data) => {
   if (!signature) {
@@ -35,7 +36,11 @@ const verifySignature = async (signature, publicKey, data) => {
 
   let res = false
   try {
-    const pubKey = publicKeyFromRaw(uint8ArrayFromString(publicKey, 'base16'))
+    let pubKeyBytes = uint8ArrayFromString(publicKey, 'base16')
+    if (pubKeyBytes.byteLength == 65) {
+      pubKeyBytes = secp256k1.publicKeyConvert(pubKeyBytes, true)
+    }
+    const pubKey = publicKeyFromRaw(pubKeyBytes)
     res = await isValid(pubKey, data, uint8ArrayFromString(signature, 'base16'))
   } catch (e) {
     // Catch error: sig length wrong

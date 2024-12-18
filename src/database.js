@@ -7,6 +7,7 @@
 import { EventEmitter } from 'events'
 import PQueue from 'p-queue'
 import Sync from './sync.js'
+import SyncGoV1 from './sync_gov1.js';
 import { Log, Entry } from './oplog/index.js'
 import { ComposedStorage, LRUStorage, IPFSBlockStorage, LevelStorage } from './storage/index.js'
 import pathJoin from './utils/path-join.js'
@@ -42,7 +43,7 @@ const defaultCacheSize = 1000
  * @return {module:Databases~Database} An instance of Database.
  * @instance
  */
-const Database = async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate }) => {
+const Database = async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver = 'js-v2' }) => {
   /**
    * @namespace module:Databases~Database
    * @description The instance returned by {@link module:Database~Database}.
@@ -108,7 +109,7 @@ const Database = async ({ ipfs, identity, address, name, access, directory, meta
     await LevelStorage({ path: pathJoin(directory, '/log/_index/') })
   )
 
-  const log = await Log(identity, { logId: address, access, entryStorage, headsStorage, indexStorage })
+  const log = await Log(identity, { logId: address, access, entryStorage, headsStorage, indexStorage, ver })
 
   const events = new EventEmitter()
 
@@ -185,7 +186,7 @@ const Database = async ({ ipfs, identity, address, name, access, directory, meta
     events.emit('drop')
   }
 
-  const sync = await Sync({ ipfs, log, events, onSynced: applyOperation, start: syncAutomatically })
+  const sync = await (ver == 'go-v1' ? SyncGoV1 : Sync)({ ipfs, log, events, onSynced: applyOperation, start: syncAutomatically })
 
   return {
     /**

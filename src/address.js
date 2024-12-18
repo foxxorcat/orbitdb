@@ -28,7 +28,7 @@ const isValidAddress = (address) => {
 
   let cid
   try {
-    cid = CID.parse(address, base58btc)
+    cid = CID.parse(address)
   } catch (e) {
     return false
   }

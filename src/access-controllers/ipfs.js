@@ -8,6 +8,7 @@ import * as dagCbor from '@ipld/dag-cbor'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { base58btc } from 'multiformats/bases/base58'
 import pathJoin from '../utils/path-join.js'
+import { base32 } from 'multiformats/bases/base32';
 
 const codec = dagCbor
 const hasher = sha256
@@ -22,6 +23,26 @@ const AccessControlList = async ({ storage, type, params }) => {
   const hash = cid.toString(hashStringEncoding)
   await storage.put(hash, bytes)
   return hash
+}
+
+const AccessControlListGoV1 = async ({ storage, type, params }) => {
+  const { cid, bytes } = await Block.encode({ value: { write: JSON.stringify(params.write) }, codec, hasher })
+  await storage.put(cid.toString(base32), bytes)
+
+  const manifest = {
+    type,
+    manifest: {
+      address: cid,
+      skip_manifest: false,
+      type: ""
+    },
+  }
+  {
+    const { cid, bytes } = await Block.encode({ value: manifest, codec, hasher })
+    const hash = cid.toString(base32)
+    await storage.put(hash, bytes)
+    return hash
+  }
 }
 
 const type = 'ipfs'
@@ -52,7 +73,7 @@ const type = 'ipfs'
  * IPFSAccessController function.
  * @memberof module:AccessControllers
  */
-const IPFSAccessController = ({ write, storage } = {}) => async ({ orbitdb, identities, address }) => {
+const IPFSAccessController = ({ write, storage } = {}) => async ({ orbitdb, identities, address, ver }) => {
   storage = storage || await ComposedStorage(
     await LRUStorage({ size: 1000 }),
     await IPFSBlockStorage({ ipfs: orbitdb.ipfs, pin: true })
@@ -63,8 +84,19 @@ const IPFSAccessController = ({ write, storage } = {}) => async ({ orbitdb, iden
     const manifestBytes = await storage.get(address.replaceAll('/ipfs/', ''))
     const { value } = await Block.decode({ bytes: manifestBytes, codec, hasher })
     write = value.write
+
+    // gov1 解析
+    if (ver == 'go-v1') {
+      const manifestAddress = value?.manifest?.address?.toString()
+      if (manifestAddress != null) {
+        const manifestBytes = await storage.get(manifestAddress)
+        const { value } = await Block.decode({ bytes: manifestBytes, codec, hasher })
+        write = value.write
+      }
+    }
+
   } else {
-    address = await AccessControlList({ storage, type, params: { write } })
+    address = await (ver == 'go-v1' ? AccessControlListGoV1 : AccessControlList)({ storage, type, params: { write } })
     address = pathJoin('/', type, address)
   }
 
@@ -76,7 +108,13 @@ const IPFSAccessController = ({ write, storage } = {}) => async ({ orbitdb, iden
    * @memberof module:AccessControllers.AccessControllers-IPFS
    */
   const canAppend = async (entry) => {
-    const writerIdentity = await identities.getIdentity(entry.identity)
+    let writerIdentity;
+    if (entry.entryGoV1 != null) {
+      writerIdentity = entry.entryGoV1.identity
+    } else {
+      writerIdentity = await identities.getIdentity(entry.identity)
+    }
+
     if (!writerIdentity) {
       return false
     }

@@ -5,7 +5,6 @@
  * IPFSBlockStorage uses IPFS to store data as raw blocks.
  */
 import { CID } from 'multiformats/cid'
-import { base58btc } from 'multiformats/bases/base58'
 import { TimeoutController } from 'timeout-abort-controller'
 import drain from 'it-drain'
 
@@ -37,7 +36,7 @@ const IPFSBlockStorage = async ({ ipfs, pin, timeout } = {}) => {
    * @instance
    */
   const put = async (hash, data) => {
-    const cid = CID.parse(hash, base58btc)
+    const cid = CID.parse(hash)
     const { signal } = new TimeoutController(timeout || DefaultTimeout)
     await ipfs.blockstore.put(cid, data, { signal })
 
@@ -57,7 +56,7 @@ const IPFSBlockStorage = async ({ ipfs, pin, timeout } = {}) => {
    * @instance
    */
   const get = async (hash) => {
-    const cid = CID.parse(hash, base58btc)
+    const cid = CID.parse(hash)
     const { signal } = new TimeoutController(timeout || DefaultTimeout)
     const block = await ipfs.blockstore.get(cid, { signal })
     if (block) {

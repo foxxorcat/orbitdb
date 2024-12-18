@@ -56,7 +56,7 @@ const DefaultAccessController = async () => {
  * @memberof module:Log
  * @instance
  */
-const Log = async (identity, { logId, logHeads, access, entryStorage, headsStorage, indexStorage, sortFn } = {}) => {
+const Log = async (identity, { logId, logHeads, access, entryStorage, headsStorage, indexStorage, sortFn, ver='js-v2' } = {}) => {
   /**
    * @namespace Log
    * @description The instance returned by {@link module:Log}
@@ -176,7 +176,8 @@ const Log = async (identity, { logId, logHeads, access, entryStorage, headsStora
         data,
         tickClock(await clock()),
         nexts,
-        refs
+        refs,
+        ver
       )
       // Authorize the entry
       const canAppend = await access.canAppend(entry)

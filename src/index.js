@@ -31,7 +31,8 @@ export {
   Identities,
   isIdentity,
   useIdentityProvider,
-  PublicKeyIdentityProvider
+  PublicKeyIdentityProvider,
+  OrbitdbIdentityProvider
 } from './identities/index.js'
 
 export {
@@ -41,3 +42,8 @@ export {
   MemoryStorage,
   ComposedStorage
 } from './storage/index.js'
+
+// export {
+//   PROTOCOL,
+//   PubSubDirectChannel
+// } from './pubsubchannel.js'
