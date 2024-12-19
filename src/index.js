@@ -19,10 +19,11 @@ export { Log, Entry, DefaultAccessController } from './oplog/index.js'
 
 export { default as Database } from './database.js'
 
-export { default as KeyStore } from './key-store.js'
+export { default as KeyStore, verifyMessage, signMessage } from './key-store.js'
 
 export {
   useAccessController,
+  getAccessController,
   IPFSAccessController,
   OrbitDBAccessController
 } from './access-controllers/index.js'
@@ -31,6 +32,7 @@ export {
   Identities,
   isIdentity,
   useIdentityProvider,
+  getIdentityProvider,
   PublicKeyIdentityProvider,
   OrbitdbIdentityProvider
 } from './identities/index.js'

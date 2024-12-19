@@ -124,7 +124,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory, directchanne
 
     if (isValidAddress(address)) {
       // If the address given was a valid OrbitDB address, eg. '/orbitdb/zdpuAuK3BHpS7NvMBivynypqciYCuy2UW77XYBPUYRnLjnw13'
-      const addr = OrbitDBAddress(address)
+      const addr = OrbitDBAddress(address, void 0, ver == 'go-v1')
       manifest = await manifestStore.get(addr.hash)
       ver = manifest.ver
       const acType = manifest.accessController.split('/', 2).pop()
@@ -140,7 +140,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory, directchanne
       accessController = await AccessController({ orbitdb: { open, identity, ipfs }, identities, name: address, ver })
       const m = await manifestStore.create({ name: address, type, accessController: accessController.address, meta, ver })
       manifest = m.manifest
-      address = OrbitDBAddress(m.hash)
+      address = OrbitDBAddress(m.hash, address, ver == 'go-v1')
       name = manifest.name
       meta = manifest.meta
       // Check if we already have the database open and return if it is
@@ -188,7 +188,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory, directchanne
     if (manifestStore) {
       await manifestStore.close()
     }
-    if (directchannel){
+    if (directchannel) {
       directchannel.close()
     }
     databases = {}

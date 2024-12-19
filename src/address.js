@@ -3,7 +3,6 @@
  * @description OrbitDB database address verification.
  */
 import { CID } from 'multiformats/cid'
-import { base58btc } from 'multiformats/bases/base58'
 import { posixJoin } from './utils/path-join.js'
 
 /**
@@ -17,18 +16,16 @@ import { posixJoin } from './utils/path-join.js'
 const isValidAddress = (address) => {
   address = address.toString()
 
-  if (!address.startsWith('/orbitdb') && !address.startsWith('\\orbitdb')) {
+  if (!address.startsWith('/orbitdb')) {
     return false
   }
 
   address = address.replaceAll('/orbitdb/', '')
-  address = address.replaceAll('\\orbitdb\\', '')
-  address = address.replaceAll('/', '')
-  address = address.replaceAll('\\', '')
+  const [hash] = address.split('/')
 
   let cid
   try {
-    cid = CID.parse(address)
+    cid = CID.parse(hash)
   } catch (e) {
     return false
   }
@@ -63,14 +60,15 @@ const parseAddress = (address) => {
  * @property {string} hash The hash of the database manifest.
  * @property {string} address The full database address.
  */
-const OrbitDBAddress = (address) => {
+const OrbitDBAddress = (address, name, joinName = false) => {
   if (address && address.protocol === 'orbitdb' && address.hash) {
     return address
   }
 
   const protocol = 'orbitdb'
 
-  const hash = address.replace('/orbitdb/', '').replace('\\orbitdb\\', '')
+  const [hash, ...names] = address.replace('/orbitdb/', '').split('/')
+  name = name || names.join('/')
 
   /**
    * Returns address as a string.
@@ -78,12 +76,15 @@ const OrbitDBAddress = (address) => {
    * @returns {string} Address as a string.
    */
   const toString = () => {
+    if (joinName && name != null)
+      return posixJoin('/', protocol, hash, name)
     return posixJoin('/', protocol, hash)
   }
 
   return {
     protocol,
     hash,
+    name,
     address,
     toString
   }
