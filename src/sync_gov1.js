@@ -2,12 +2,9 @@ import { pipe } from 'it-pipe'
 import PQueue from 'p-queue'
 import { EventEmitter } from 'events'
 import { TimeoutController } from 'timeout-abort-controller'
-import { fromString as uint8arraysFromString } from 'uint8arrays/from-string';
-import { toString as uint8arraysToString } from 'uint8arrays/to-string';
-import { goJSONReplacer, goJSONReviver, toUint8Array, u8ToString } from './utils/go-json.js';
+import { toUint8Array, u8ToString } from './utils/go-json.js';
 import Entry from './oplog/entry.js';
 
-import { varint } from 'multiformats';
 import { CID } from 'multiformats/cid';
 import { base32 } from 'multiformats/bases/base32';
 import { sha256 } from 'multiformats/hashes/sha2';
@@ -79,7 +76,7 @@ const PROTOCOL = "/go-orbit-db/direct-channel/1.2.0"
  * @memberof module:Sync
  * @instance
  */
-const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler }) => {
+const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler, directchannel }) => {
   /**
    * @namespace module:Sync~Sync
    * @description The instance returned by {@link module:Sync}.
@@ -165,12 +162,9 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
       ?.map(head => head?.entryGoV1)
       .filter(Boolean)
       .map(toEntryGoV1JSONByEntryGoV1) || []
-    const msg = {
-      address,
-      heads,
-    }
+    const msg = { address, heads }
     console.debug('builderMsg', msg);
-    return await marshaler.marshal(msg)
+    return await marshaler.marshal(msg, address, 'go-v1')
   }
 
   /**
@@ -179,8 +173,8 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
    * @returns {Promise<Uint8Array[]>} entrysBytes
    */
   const parseMsg = async (value) => {
-    let { address, heads = [] } = await marshaler.unmarshal(value)
-    if (address != address) { return [] }
+    let { address: rAddress, heads = [] } = await marshaler.unmarshal(value, address, 'go-v1') || {}
+    if (rAddress != address) { return [] }
 
     const headsBytes = []
     for (const head of heads) {
@@ -199,37 +193,18 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
     return headsBytes
   }
 
-  const sendHeads = (source) => {
-    return (async function* () {
-      const data = await builderMsg()
-
-      yield varint.encodeTo(data.byteLength, new Uint8Array(varint.encodingLength(data.byteLength)))
-      yield data
-    })()
-  }
-
-  const receiveHeads = (peerId) => async (source) => {
+  const handleReceiveHeads = async ({ remotePeer, bytes }) => {
+    const peerId = String(remotePeer)
     try {
-      const { value: length } = (await source.next())
-      const [len] = varint.decode(length.subarray())
-      const { value: data } = (await source.next())
-
+      peers.add(peerId)
       if (onSynced) {
-        for (const headBytes of await parseMsg(data.subarray())) {
+        for (const headBytes of await parseMsg(bytes)) {
           await onSynced(headBytes)
         }
       }
       if (started) {
         await onPeerJoined(peerId)
       }
-    } finally { source.return() }
-  }
-
-  const handleReceiveHeads = async ({ connection, stream }) => {
-    const peerId = String(connection.remotePeer)
-    try {
-      peers.add(peerId)
-      await pipe(stream, receiveHeads(peerId))
     } catch (e) {
       peers.delete(peerId)
       events.emit('error', e)
@@ -237,7 +212,7 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
   }
 
   const handlePeerSubscribed = async (event) => {
-    console.log('pubsub ', event);
+    console.debug('pubsub ', event);
 
     const task = async () => {
       const { peerId: remotePeer, subscriptions } = event.detail
@@ -254,8 +229,7 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
         const { signal } = timeoutController
         try {
           peers.add(peerId)
-          const stream = await libp2p.dialProtocol(remotePeer, PROTOCOL, { signal })
-          await pipe(sendHeads, stream)
+          await directchannel.send(remotePeer, await builderMsg(), { signal })
         } catch (e) {
           console.error(e)
           peers.delete(peerId)
@@ -325,7 +299,7 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
       await queue.onIdle()
       pubsub.removeEventListener('subscription-change', handlePeerSubscribed)
       pubsub.removeEventListener('message', handleUpdateMessage)
-      await libp2p.unhandle(PROTOCOL)
+      directchannel.off('channel-message', handleReceiveHeads)
       await pubsub.unsubscribe(address)
       peers.clear()
     }
@@ -340,7 +314,7 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
   const startSync = async () => {
     if (!started) {
       // Exchange head entries with peers when connected
-      await libp2p.handle(PROTOCOL, handleReceiveHeads)
+      directchannel.on('channel-message', handleReceiveHeads)
       pubsub.addEventListener('subscription-change', handlePeerSubscribed)
       pubsub.addEventListener('message', handleUpdateMessage)
       // Subscribe to the pubsub channel for this database through which updates are sent

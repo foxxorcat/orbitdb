@@ -15,8 +15,8 @@ const type = 'keyvalue'
  * @return {module:Databases.Databases-KeyValue} A KeyValue function.
  * @memberof module:Databases
  */
-const KeyValue = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler }) => {
-  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler })
+const KeyValue = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler, directchannel }) => {
+  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, ver, marshaler, directchannel })
 
   const { addOperation, log } = database
 
@@ -72,7 +72,7 @@ const KeyValue = () => async ({ ipfs, identity, address, name, access, directory
    * @memberof module:Databases.Databases-KeyValue
    * @instance
    */
-  const iterator = async function * ({ amount } = {}) {
+  const iterator = async function* ({ amount } = {}) {
     const keys = {}
     let count = 0
     for await (const entry of log.traverse()) {

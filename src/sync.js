@@ -147,14 +147,14 @@ const Sync = async ({ ipfs, log, events, onSynced, start, timeout, marshaler }) 
     return (async function* () {
       const heads = await log.heads()
       for await (const { bytes } of heads) {
-        yield marshaler.marshal(bytes)
+        yield marshaler.marshal(bytes, address, 'js-v2')
       }
     })()
   }
 
   const receiveHeads = (peerId) => async (source) => {
     for await (const value of source) {
-      const headBytes = marshaler.unmarshal(value.subarray())
+      const headBytes = marshaler.unmarshal(value.subarray(), address, 'js-v2')
       if (headBytes && onSynced) {
         await onSynced(headBytes)
       }

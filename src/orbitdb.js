@@ -11,6 +11,7 @@ import { createId } from './utils/index.js'
 import pathJoin from './utils/path-join.js'
 import { getAccessController } from './access-controllers/index.js'
 import IPFSAccessController from './access-controllers/ipfs.js'
+import { DirectChannel } from './channel/directchannel.js'
 
 const DefaultDatabaseType = 'events'
 
@@ -30,7 +31,7 @@ const DefaultAccessController = IPFSAccessController
  * @throws "IPFS instance is required argument" if no IPFS instance is provided.
  * @instance
  */
-const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
+const OrbitDB = async ({ ipfs, id, identity, identities, directory, directchannel } = {}) => {
   /**
    * @namespace module:OrbitDB~OrbitDB
    * @description The instance returned by {@link module:OrbitDB}.
@@ -60,6 +61,8 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
   } else {
     identity = await identities.createIdentity({ id })
   }
+
+  directchannel = new DirectChannel(ipfs.libp2p)
 
   const manifestStore = await ManifestStore({ ipfs })
 
@@ -112,7 +115,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
    * @instance
    * @async
    */
-  const open = async (address, { type, meta, sync, Database, AccessController, headsStorage, entryStorage, indexStorage, referencesCount, ver ='js-v2', marshaler } = {}) => {
+  const open = async (address, { type, meta, sync, Database, AccessController, headsStorage, entryStorage, indexStorage, referencesCount, ver = 'js-v2', marshaler } = {}) => {
     let name, manifest, accessController
 
     if (databases[address]) {
@@ -154,7 +157,7 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
 
     address = address.toString()
 
-    const db = await Database({ ipfs, identity, address, name, access: accessController, directory, meta, syncAutomatically: sync, headsStorage, entryStorage, indexStorage, referencesCount, ver, marshaler })
+    const db = await Database({ ipfs, identity, address, name, access: accessController, directory, meta, syncAutomatically: sync, headsStorage, entryStorage, indexStorage, referencesCount, ver, marshaler, directchannel })
     db.ver = ver
 
     db.events.on('close', onDatabaseClosed(address))
@@ -184,6 +187,9 @@ const OrbitDB = async ({ ipfs, id, identity, identities, directory } = {}) => {
     }
     if (manifestStore) {
       await manifestStore.close()
+    }
+    if (directchannel){
+      directchannel.close()
     }
     databases = {}
   }

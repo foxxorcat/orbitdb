@@ -25,8 +25,8 @@ const DefaultOptions = { indexBy: '_id' }
  * @return {module:Databases.Databases-Documents} A Documents function.
  * @memberof module:Databases
  */
-const Documents = ({ indexBy } = DefaultOptions) => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler }) => {
-  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, ver, marshaler })
+const Documents = ({ indexBy } = DefaultOptions) => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler, directchannel }) => {
+  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, ver, marshaler, directchannel })
 
   const { addOperation, log } = database
 
@@ -110,7 +110,7 @@ const Documents = ({ indexBy } = DefaultOptions) => async ({ ipfs, identity, add
    * @memberof module:Databases.Databases-Documents
    * @instance
    */
-  const iterator = async function * ({ amount } = {}) {
+  const iterator = async function* ({ amount } = {}) {
     const keys = {}
     let count = 0
     for await (const entry of log.iterator()) {

@@ -109,7 +109,7 @@ const Index = ({ directory } = {}) => async () => {
  * function.
  * @memberof module:Databases
  */
-const KeyValueIndexed = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler }) => {
+const KeyValueIndexed = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler, directchannel }) => {
   // Set up the directory for an index
   directory = pathJoin(directory || './orbitdb', `./${address}/_index/`)
 
@@ -117,7 +117,7 @@ const KeyValueIndexed = () => async ({ ipfs, identity, address, name, access, di
   const index = await Index({ directory })()
 
   // Set up the underlying KeyValue database
-  const keyValueStore = await KeyValue()({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate: index.update, ver, marshaler })
+  const keyValueStore = await KeyValue()({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate: index.update, ver, marshaler, directchannel })
 
   /**
    * Gets a value from the store by key.
@@ -143,7 +143,7 @@ const KeyValueIndexed = () => async ({ ipfs, identity, address, name, access, di
    * @memberof module:Databases.Databases-KeyValueIndexed
    * @instance
    */
-  const iterator = async function * ({ amount } = {}) {
+  const iterator = async function* ({ amount } = {}) {
     const it = index.iterator({ amount, reverse: true })
     for await (const record of it) {
       // 'index' is a LevelStorage that returns a [key, value] pair

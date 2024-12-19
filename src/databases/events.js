@@ -15,8 +15,8 @@ const type = 'events'
  * @return {module:Databases.Databases-Events} A Events function.
  * @memberof module:Databases
  */
-const Events = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler }) => {
-  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler })
+const Events = () => async ({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, onUpdate, ver, marshaler, directchannel }) => {
+  const database = await Database({ ipfs, identity, address, name, access, directory, meta, headsStorage, entryStorage, indexStorage, referencesCount, syncAutomatically, ver, marshaler, directchannel })
 
   const { addOperation, log } = database
 
@@ -62,7 +62,7 @@ const Events = () => async ({ ipfs, identity, address, name, access, directory, 
    * @memberof module:Databases.Databases-Events
    * @instance
    */
-  const iterator = async function * ({ gt, gte, lt, lte, amount } = {}) {
+  const iterator = async function* ({ gt, gte, lt, lte, amount } = {}) {
     const it = log.iterator({ gt, gte, lt, lte, amount })
     for await (const event of it) {
       const hash = event.hash
