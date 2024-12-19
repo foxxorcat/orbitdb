@@ -263,7 +263,10 @@ const encodeGoV1 = async (entry, identity, includePayload = true) => {
   if (includePayload) {
     if (typeof payload == 'object' && typeof payload?.op == 'string') {
       if (payload.value instanceof Uint8Array) {
-        payload.value = base64pad.baseEncode(payload.value)
+        payload = {
+          ...payload,
+          value: base64pad.baseEncode(payload.value)
+        }
       }
       payload = JSON.stringify(payload)
     }
