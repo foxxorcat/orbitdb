@@ -254,10 +254,9 @@ const SyncGoV1 = async ({ ipfs, log, events, onSynced, start, timeout, marshaler
   const handleUpdateMessage = async message => {
     const { topic, data } = message.detail
 
-    const entrysBytes = await parseMsg(data)
-
     const task = async () => {
       try {
+        const entrysBytes = await parseMsg(data)
         if (onSynced) {
           for (const entryBytes of entrysBytes) {
             await onSynced(entryBytes)
