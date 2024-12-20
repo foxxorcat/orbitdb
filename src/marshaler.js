@@ -17,6 +17,9 @@ const unmarshal = (payload, address, ver = 'js-v2') => {
             if (head.identity.id instanceof Uint8Array) {
                 head.identity.id = base64.baseEncode(head.identity.id)
             }
+            if (head.id instanceof Uint8Array) {
+                head.id = base64.baseEncode(head.id)
+            }
         }
         return msg
     }

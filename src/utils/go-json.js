@@ -26,9 +26,6 @@ export const goJSONReplacer = (key, value) => {
 }
 export const goJSONReviver = (key, value) => {
     if (typeof value == 'string') {
-        if (value.startsWith('/')) {
-            return value
-        }
         if (key == '/') {
             try { return CID.parse(value) }
             catch (error) { }
