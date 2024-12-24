@@ -9,13 +9,13 @@
 * const keystore = await KeyStore({ storage })
 */
 import { privateKeyFromRaw, publicKeyFromRaw, generateKeyPair } from '@libp2p/crypto/keys'
+import { secp256k1 as secp } from '@noble/curves/secp256k1'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { compare as uint8ArrayCompare } from 'uint8arrays/compare'
 import ComposedStorage from './storage/composed.js'
 import LevelStorage from './storage/level.js'
 import LRUStorage from './storage/lru.js'
-import secp256k1 from 'secp256k1';
 
 const verifySignature = async (signature, publicKey, data) => {
   if (!signature) {
@@ -38,7 +38,7 @@ const verifySignature = async (signature, publicKey, data) => {
   try {
     let pubKeyBytes = uint8ArrayFromString(publicKey, 'base16')
     if (pubKeyBytes.byteLength == 65) {
-      pubKeyBytes = secp256k1.publicKeyConvert(pubKeyBytes, true)
+      pubKeyBytes = secp.ProjectivePoint.fromHex(pubKeyBytes).toRawBytes(true)
     }
     const pubKey = publicKeyFromRaw(pubKeyBytes)
     res = await isValid(pubKey, data, uint8ArrayFromString(signature, 'base16'))

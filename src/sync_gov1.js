@@ -1,4 +1,3 @@
-import { pipe } from 'it-pipe'
 import PQueue from 'p-queue'
 import { EventEmitter } from 'events'
 import { TimeoutController } from 'timeout-abort-controller'
@@ -13,7 +12,6 @@ import * as dagCbor from '@ipld/dag-cbor'
 
 
 const DefaultTimeout = 30000 // 30 seconds
-const PROTOCOL = "/go-orbit-db/direct-channel/1.2.0"
 
 /**
  * @module Sync
