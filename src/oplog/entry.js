@@ -7,7 +7,6 @@ import { base32 } from 'multiformats/bases/base32';
 import { base64pad } from 'multiformats/bases/base64';
 import { CID } from 'multiformats/cid';
 import { keyJSONSort, toUint8Array } from '../utils/go-json.js';
-import Identity from '../identities/identity.js';
 
 const codec = dagCbor
 const hasher = sha256
@@ -292,7 +291,7 @@ const encodeGoV1 = async (entry, identity, includePayload = true) => {
   value.sig = signature
   value.key = identity.publicKey
   {
-    const { id, publicKey, signatures, type } = await Identity(identity)
+    const { id, publicKey, signatures, type } = identity
     value.identity = { id, publicKey, signatures, type }
   }
 
@@ -313,11 +312,11 @@ const encodeGoV1 = async (entry, identity, includePayload = true) => {
  */
 const decodeGoV1 = async (entryGoV1, includePayload = true) => {
   if (typeof entryGoV1.identity == 'string') throw new Error('not go v1 entry')
-  entryGoV1.identity = await Identity(entryGoV1.identity)
 
   const next = entryGoV1.next?.map(n => n.toString(hashStringEncoding)) || []
   const refs = entryGoV1.refs?.map(n => n.toString(hashStringEncoding)) || []
   const clock = Clock(entryGoV1.clock.id, entryGoV1.clock.time)
+  entryGoV1.identity = await encodeIdentity(entryGoV1.identity)
 
   let { id, payload, identity, key, sig } = entryGoV1
 
@@ -348,6 +347,13 @@ const decodeGoV1 = async (entryGoV1, includePayload = true) => {
   }
 
   return entry
+}
+const encodeIdentity = async (identity) => {
+  const { id, publicKey, signatures, type } = identity
+  const value = { id, publicKey, signatures, type }
+  const { cid, bytes } = await Block.encode({ value, codec, hasher })
+  const hash = cid.toString(hashStringEncoding)
+  return { hash, bytes: Uint8Array.from(bytes), ...value }
 }
 
 export default {
